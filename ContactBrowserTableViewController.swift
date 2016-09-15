@@ -19,6 +19,10 @@ class ContactBrowserTableViewController: UITableViewController, UISearchBarDeleg
     
     private let contactBrowserCellIdentifier = "ContactTableViewCell"
     
+    
+    
+    
+    
     // MARK: - View Controller Lifecycle
     
     override func viewDidLoad() {
@@ -34,7 +38,12 @@ class ContactBrowserTableViewController: UITableViewController, UISearchBarDeleg
         }
     }
     
-    // MARK: - Search Bar
+    
+
+    
+    
+    
+    // MARK: - Search Bar Delegate Methods
     
     func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
         print(searchText)
@@ -51,25 +60,26 @@ class ContactBrowserTableViewController: UITableViewController, UISearchBarDeleg
             contactViewModel.shouldShowSearchResults = false
             self.tableView.reloadData()
         }
-    
     }
 
-    // MARK: - Table view data source
+    
+    
+    
+    
+    
+    // MARK: - Table view datasource
 
     override func numberOfSections(in tableView: UITableView) -> Int {
         
         var sections = 0
         
         if (contactViewModel.shouldShowSearchResults) {
-            for _ in contactViewModel.contactModel.filteredContacts.keys {
-                sections += 1
-            }
+            return 1
         } else {
             for _ in contactViewModel.contactModel.contacts.keys {
                 sections += 1
             }
         }
-        
         return sections
         
     }
@@ -81,9 +91,7 @@ class ContactBrowserTableViewController: UITableViewController, UISearchBarDeleg
         var rows = 0
         
         if (contactViewModel.shouldShowSearchResults) {
-            if let contact = contactViewModel.contactModel.filteredContacts[Alphabet[section]] {
-                rows = contact.count
-            }
+            return contactViewModel.contactModel.filteredContacts.count
         } else {
             if let contact = contactViewModel.contactModel.contacts[Alphabet[section]] {
                 rows = contact.count
@@ -94,7 +102,11 @@ class ContactBrowserTableViewController: UITableViewController, UISearchBarDeleg
     
     override func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
         
-        return Alphabet[section]
+        if (contactViewModel.shouldShowSearchResults) {
+            return nil
+        } else {
+            return Alphabet[section]
+        }
         
     }
 
@@ -105,7 +117,7 @@ class ContactBrowserTableViewController: UITableViewController, UISearchBarDeleg
         var contact = CNContact()
         
         if (contactViewModel.shouldShowSearchResults) {
-            contact = (contactViewModel.contactModel.filteredContacts[Alphabet[indexPath.section]]?[indexPath.row])!
+            contact = contactViewModel.contactModel.filteredContacts[indexPath.row]
         } else {
             contact = (contactViewModel.contactModel.contacts[Alphabet[indexPath.section]]?[indexPath.row])!
         }
@@ -120,12 +132,25 @@ class ContactBrowserTableViewController: UITableViewController, UISearchBarDeleg
         
     }
     
+    override func sectionIndexTitles(for tableView: UITableView) -> [String]? {
+        return Alphabet
+    }
+    
+    override func tableView(_ tableView: UITableView, sectionForSectionIndexTitle title: String, at index: Int) -> Int {
+        
+        if let indexOfAlphabetArray = Alphabet.index(of: title) {
+            let sectionForIndexTitle = Int(indexOfAlphabetArray)
+            return sectionForIndexTitle
+        }
+        return 0
+    }
+    
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         
         var contact = CNContact()
         
         if (contactViewModel.shouldShowSearchResults) {
-            contact = (contactViewModel.contactModel.filteredContacts[Alphabet[indexPath.section]]?[indexPath.row])!
+            contact = contactViewModel.contactModel.filteredContacts[indexPath.row]
         } else {
             contact = (contactViewModel.contactModel.contacts[Alphabet[indexPath.section]]?[indexPath.row])!
         }
@@ -158,6 +183,15 @@ class ContactBrowserTableViewController: UITableViewController, UISearchBarDeleg
     }
     
 }
+
+
+
+
+
+
+
+
+
 
     // MARK: - Extensions to Fundamental Classes
 
