@@ -36,27 +36,9 @@ class ContactBrowserTests: XCTestCase {
     func testLoadContactsFunctionLoadsTheContactsArray() {
         let contactViewModel = ContactViewModel()
         contactViewModel.loadContacts()
-        XCTAssertTrue(contactViewModel.contactModel.contacts.count == 206)
+        XCTAssertTrue(contactViewModel.contactModel.contacts.count == 24)
     }
     
-//    func testLoadFilteredContactsFunctionLoadsTheContactsArray() {
-//        let contactViewModel = ContactViewModel()
-//        contactViewModel.loadFilteredContacts(filterString: "A")
-//        XCTAssertTrue(contactViewModel.contactModel.filteredContacts.count == 16)
-//        
-//        contactViewModel.loadFilteredContacts(filterString: "Ab")
-//        XCTAssertTrue(contactViewModel.contactModel.filteredContacts.count == 1)
-    
-//        contactViewModel.loadFilteredContacts(filterString: "A")
-//        XCTAssertTrue(contactViewModel.contactModel.filteredContacts.count == 16)
-//    }
-    
-    func testResetFilteredContactArrayFunctionality() {
-        
-        
-        
-        
-    }
     
     
     func testPerformanceExample() {

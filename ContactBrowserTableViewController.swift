@@ -11,18 +11,14 @@ import Contacts
 
 class ContactBrowserTableViewController: UITableViewController, UISearchBarDelegate, UISearchDisplayDelegate {
     
-    // MARK: - Outlets, Classes and Variables
+    // MARK: - Outlets, View Model and Variables
     
     @IBOutlet weak var searchBar: UISearchBar!
-    
+
     var contactViewModel = ContactViewModel()
     
     private let contactBrowserCellIdentifier = "ContactTableViewCell"
-    
-    
-    
-    
-    
+ 
     // MARK: - UITableViewController Lifecycle
     
     override func viewDidLoad() {
@@ -30,42 +26,18 @@ class ContactBrowserTableViewController: UITableViewController, UISearchBarDeleg
         
         searchBar.delegate = self
         
-        DispatchQueue.global(qos: .background).async { [weak self] () -> Void in
-            self?.contactViewModel.loadContacts()
-            DispatchQueue.main.async { () -> Void in
-                self?.tableView.reloadData()
-            }
-        }
-    }
-    
-    
-    
-    
-    
-    
-    // MARK: - UISearchBarDelegate Methods
-    
-    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
-        print(searchText)
-        if searchText != "" {
-            contactViewModel.shouldShowSearchResults = true
-            contactViewModel.resetFilteredContactArray()
-            DispatchQueue.global(qos: .background).async { [weak self] () -> Void in
-                self?.contactViewModel.loadFilteredContacts(filterString: searchText)
-                DispatchQueue.main.async { () -> Void in
-                    self?.tableView.reloadData()
-                }
-            }
-        } else {
-            contactViewModel.shouldShowSearchResults = false
+        contactViewModel.loadContacts {
             self.tableView.reloadData()
         }
     }
+ 
+    // MARK: - UISearchBarDelegate Methods
     
-    
-    
-    
-    
+    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+        contactViewModel.loadFilteredContacts(searchText: searchText) {
+            self.tableView.reloadData()
+        }
+    }
     
     // MARK: - UITableView Datasource
     
@@ -73,11 +45,8 @@ class ContactBrowserTableViewController: UITableViewController, UISearchBarDeleg
         
         let cell = tableView.dequeueReusableCell(withIdentifier: contactBrowserCellIdentifier, for: indexPath) as UITableViewCell
         
-        let contact = contactViewModel.contactAtIndex(indexPath: indexPath)
-        
-        cell.textLabel?.text = "\(contact.givenName) \(contact.familyName)"
-        let phoneNumber = contactViewModel.phoneNumberStringModifier(contact: contact)
-        cell.detailTextLabel?.text = "\(phoneNumber)"
+        cell.textLabel?.text = contactViewModel.fullNameStringForContactAtIndexPath(indexPath: indexPath)
+        cell.detailTextLabel?.text = contactViewModel.phoneNumberFancyStringForContactAtIndexPath(indexPath: indexPath)
         
         return cell
         
@@ -85,12 +54,9 @@ class ContactBrowserTableViewController: UITableViewController, UISearchBarDeleg
     
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         
-        let contact = contactViewModel.contactAtIndex(indexPath: indexPath)
+        let alertMessage = contactViewModel.alertControllerMessageForContactAtIndexPath(indexPath: indexPath)
         
-        let contactName = "\(contact.givenName) \(contact.familyName)"
-        let phoneNumber = contactViewModel.phoneNumberStringModifier(contact: contact)
-        
-        let alertController = UIAlertController(title: "Call Contact", message: "Would you like to call \(contactName) at number: \(phoneNumber)?", preferredStyle: .alert)
+        let alertController = UIAlertController(title: "Call Contact", message: alertMessage, preferredStyle: .alert)
         
         let cancelAction = UIAlertAction(title: "Cancel", style: .cancel) { (action) in
             
@@ -99,10 +65,11 @@ class ContactBrowserTableViewController: UITableViewController, UISearchBarDeleg
         
         let OKAction = UIAlertAction(title: "Yes", style: .default) { (action) in
             
-            let phoneNumberForCalling = (contact.phoneNumbers[0].value).value(forKey: "digits") as! String
-            if let url = NSURL(string: "tel://\(phoneNumberForCalling)") {
-                UIApplication.shared.open(URL(string: "\(url)")!, options: [:]) { completion in print("Was number \(phoneNumberForCalling) called? \(completion)") }
-            }
+            let url = self.contactViewModel.urlForPlacingACallToContactAtIndexPath(indexPath: indexPath)
+            let phoneNumberForCalling = self.contactViewModel.phoneNumberForContactAtIndexPath(indexPath: indexPath)
+            
+            UIApplication.shared.open(url!, options: [:]) { completion in print("Was number \(phoneNumberForCalling) called? \(completion)") }
+
         }
         alertController.addAction(OKAction)
         
@@ -113,30 +80,15 @@ class ContactBrowserTableViewController: UITableViewController, UISearchBarDeleg
     }
     
     override func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
-        
         return contactViewModel.titleForHeaderInSection(section: section)
-        
     }
     
     override func numberOfSections(in tableView: UITableView) -> Int {
-        
-        var sections = 0
-        
-        if (contactViewModel.shouldShowSearchResults) {
-            return 1
-        } else {
-            for _ in contactViewModel.contactModel.contacts.keys {
-                sections += 1
-            }
-        }
-        return sections
-        
+        return contactViewModel.numberOfSections()
     }
     
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        
         return contactViewModel.numberOfRowsInSection(section: section)
-        
     }
     
     
@@ -145,22 +97,7 @@ class ContactBrowserTableViewController: UITableViewController, UISearchBarDeleg
     }
     
     override func tableView(_ tableView: UITableView, sectionForSectionIndexTitle title: String, at index: Int) -> Int {
-        
         return contactViewModel.sectionForSectionIndexTitle(title: title, index: index)
-        
-    }
-    
-}
-
-
-
-
-
-// MARK: - Extensions to Fundamental Classes
-
-extension String {
-    func insert(string:String,ind:Int) -> String {
-        return  String(self.characters.prefix(ind)) + string + String(self.characters.suffix(self.characters.count-ind))
     }
     
 }

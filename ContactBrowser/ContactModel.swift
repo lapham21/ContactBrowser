@@ -13,6 +13,4 @@ class ContactModel
 {    
     var contacts = [String: [CNContact]]()
     
-    var filteredContacts = [CNContact]()
-    
 }

@@ -9,14 +9,25 @@
 import Foundation
 import Contacts
 
-class ContactViewModel
-{
+class ContactViewModel {
+    
+    private var filteredContacts = [CNContact]()
     
     private var store = CNContactStore()
     
     var shouldShowSearchResults = false
     
-    var contactModel = ContactModel()
+    private var contactModel = ContactModel()
+    
+    func loadContacts(completion: @escaping () -> ()) {
+        
+        DispatchQueue.global(qos: .background).async { [weak self] () -> Void in
+            self?.loadContacts()
+            DispatchQueue.main.async { () -> Void in
+                completion()
+            }
+        }
+    }
     
     func loadContacts() {
         let toFetch = [CNContactGivenNameKey, CNContactFamilyNameKey, CNContactPhoneNumbersKey]
@@ -38,7 +49,6 @@ class ContactViewModel
             print(err)
         }
         
-        // Sort the contactModel.contacts Dictionary alphabetically for each key
         for key in contactModel.contacts.keys {
             contactModel.contacts[key]?.sort {
                 $0.givenName < $1.givenName
@@ -46,27 +56,41 @@ class ContactViewModel
         }
     }
     
-    func loadFilteredContacts(filterString: String) {
-        let toFetch = [CNContactGivenNameKey, CNContactFamilyNameKey, CNContactPhoneNumbersKey]
-        let request = CNContactFetchRequest(keysToFetch: toFetch as [CNKeyDescriptor])
+    func loadFilteredContacts(searchText: String, completion: @escaping () -> ()) {
         
-        do {
-            try store.enumerateContacts(with: request) {
-                contact, stop in
+        if searchText != "" {
+            shouldShowSearchResults = true
+            resetFilteredContactArray()
+            DispatchQueue.global(qos: .background).async { [weak self] () -> Void in
+                self?.loadFilteredContacts(filterString: searchText)
+                DispatchQueue.main.async { () -> Void in
+                    completion()
+                }
+            }
+        } else {
+            shouldShowSearchResults = false
+            completion()
+        }
+        
+    }
+    
+    func loadFilteredContacts(filterString: String) {
+        
+        for (_, contacts) in self.contactModel.contacts {
+            for contact in contacts {
                 if contact.givenName.hasPrefix(filterString) || ((contact.phoneNumbers[0].value).value(forKey: "digits") as! String).hasPrefix(filterString) {
                     if contact.phoneNumbers.description != "" {         // Prevents adding the contact if there is no phone number
-                        self.contactModel.filteredContacts.append(contact)
+                        self.filteredContacts.append(contact)
                     }
                 }
             }
-        } catch let err {
-            print(err)
         }
-        contactModel.filteredContacts.sort { $0.givenName < $1.givenName }
+        
+        filteredContacts.sort { $0.givenName < $1.givenName }
     }
     
     func resetFilteredContactArray() {
-        contactModel.filteredContacts.removeAll()
+        filteredContacts.removeAll()
     }
     
     private let Alphabet = ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"]
@@ -80,12 +104,27 @@ class ContactViewModel
         }
     }
     
+    func numberOfSections() -> Int {
+        
+        var sections = 0
+        
+        if (shouldShowSearchResults) {
+            return 1
+        } else {
+            for _ in contactModel.contacts.keys {
+                sections += 1
+            }
+        }
+        return sections
+        
+    }
+    
     func numberOfRowsInSection(section: Int) -> Int {
         
         var rows = 0
         
         if (shouldShowSearchResults) {
-            return contactModel.filteredContacts.count
+            return filteredContacts.count
         } else {
             if let contact = contactModel.contacts[Alphabet[section]] {
                 rows = contact.count
@@ -95,17 +134,41 @@ class ContactViewModel
         
     }
     
-    func contactAtIndex(indexPath: IndexPath) -> CNContact {
+    func contactAtIndexPath(indexPath: IndexPath) -> CNContact {
         
         var contact = CNContact()
         
         if (shouldShowSearchResults) {
-            contact = contactModel.filteredContacts[indexPath.row]
+            contact = filteredContacts[indexPath.row]
         } else {
             contact = (contactModel.contacts[Alphabet[indexPath.section]]?[indexPath.row])!
         }
         
         return contact
+        
+    }
+    
+    func alertControllerMessageForContactAtIndexPath(indexPath: IndexPath) -> String {
+        
+        let contact = contactAtIndexPath(indexPath: indexPath)
+        let contactName = "\(contact.givenName) \(contact.familyName)"
+        let phoneNumber = phoneNumberFancyStringForContactAtIndexPath(indexPath: indexPath)
+        
+        return "Would you like to call \(contactName) at number: \(phoneNumber)?"
+    }
+    
+    func urlForPlacingACallToContactAtIndexPath(indexPath: IndexPath) -> URL? {
+        
+        let contact = contactAtIndexPath(indexPath: indexPath)
+        let phoneNumberForCalling = (contact.phoneNumbers[0].value).value(forKey: "digits") as! String
+        return URL(string: "tel://\(phoneNumberForCalling)")
+
+    }
+    
+    func phoneNumberForContactAtIndexPath(indexPath: IndexPath) -> String {
+        
+        let contact = contactAtIndexPath(indexPath: indexPath)
+        return (contact.phoneNumbers[0].value).value(forKey: "digits") as! String
         
     }
     
@@ -123,13 +186,19 @@ class ContactViewModel
         
     }
     
-    func phoneNumberStringModifier(contact: CNContact) -> String {
+    func phoneNumberFancyStringForContactAtIndexPath(indexPath: IndexPath) -> String {
         
+        let contact = contactAtIndexPath(indexPath: indexPath)
         var phoneNumber = "(\((contact.phoneNumbers[0].value).value(forKey: "digits") as! String)"
         phoneNumber = phoneNumber.insert(string: ") ", ind: 4)
         phoneNumber = phoneNumber.insert(string: "-", ind: 9)
         return phoneNumber
         
+    }
+    
+    func fullNameStringForContactAtIndexPath(indexPath: IndexPath) -> String {
+        let contact = contactAtIndexPath(indexPath: indexPath)
+        return "\(contact.givenName) \(contact.familyName)"
     }
     
 }
