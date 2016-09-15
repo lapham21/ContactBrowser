@@ -11,7 +11,7 @@ import Contacts
 
 class ContactBrowserTableViewController: UITableViewController, UISearchBarDelegate, UISearchDisplayDelegate {
     
-    // MARK: - Outlets, Models and Variables
+    // MARK: - Outlets, Classes and Variables
     
     @IBOutlet weak var searchBar: UISearchBar!
     
@@ -23,11 +23,11 @@ class ContactBrowserTableViewController: UITableViewController, UISearchBarDeleg
     
     
     
-    // MARK: - View Controller Lifecycle
+    // MARK: - UITableViewController Lifecycle
     
     override func viewDidLoad() {
         super.viewDidLoad()
-
+        
         searchBar.delegate = self
         
         DispatchQueue.global(qos: .background).async { [weak self] () -> Void in
@@ -39,11 +39,11 @@ class ContactBrowserTableViewController: UITableViewController, UISearchBarDeleg
     }
     
     
-
     
     
     
-    // MARK: - Search Bar Delegate Methods
+    
+    // MARK: - UISearchBarDelegate Methods
     
     func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
         print(searchText)
@@ -61,104 +61,34 @@ class ContactBrowserTableViewController: UITableViewController, UISearchBarDeleg
             self.tableView.reloadData()
         }
     }
-
     
     
     
     
     
-    // MARK: - Table view datasource
-
-    override func numberOfSections(in tableView: UITableView) -> Int {
-        
-        var sections = 0
-        
-        if (contactViewModel.shouldShowSearchResults) {
-            return 1
-        } else {
-            for _ in contactViewModel.contactModel.contacts.keys {
-                sections += 1
-            }
-        }
-        return sections
-        
-    }
-        
-    let Alphabet = ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"]
-
-    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        
-        var rows = 0
-        
-        if (contactViewModel.shouldShowSearchResults) {
-            return contactViewModel.contactModel.filteredContacts.count
-        } else {
-            if let contact = contactViewModel.contactModel.contacts[Alphabet[section]] {
-                rows = contact.count
-            }
-        }
-        return rows
-    }
     
-    override func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
-        
-        if (contactViewModel.shouldShowSearchResults) {
-            return nil
-        } else {
-            return Alphabet[section]
-        }
-        
-    }
-
+    // MARK: - UITableView Datasource
+    
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         
         let cell = tableView.dequeueReusableCell(withIdentifier: contactBrowserCellIdentifier, for: indexPath) as UITableViewCell
         
-        var contact = CNContact()
-        
-        if (contactViewModel.shouldShowSearchResults) {
-            contact = contactViewModel.contactModel.filteredContacts[indexPath.row]
-        } else {
-            contact = (contactViewModel.contactModel.contacts[Alphabet[indexPath.section]]?[indexPath.row])!
-        }
+        let contact = contactViewModel.contactAtIndex(indexPath: indexPath)
         
         cell.textLabel?.text = "\(contact.givenName) \(contact.familyName)"
-        var phoneNumber = "(\((contact.phoneNumbers[0].value).value(forKey: "digits") as! String)"
-        phoneNumber = phoneNumber.insert(string: ") ", ind: 4)
-        phoneNumber = phoneNumber.insert(string: "-", ind: 9)
+        let phoneNumber = contactViewModel.phoneNumberStringModifier(contact: contact)
         cell.detailTextLabel?.text = "\(phoneNumber)"
         
         return cell
         
     }
     
-    override func sectionIndexTitles(for tableView: UITableView) -> [String]? {
-        return Alphabet
-    }
-    
-    override func tableView(_ tableView: UITableView, sectionForSectionIndexTitle title: String, at index: Int) -> Int {
-        
-        if let indexOfAlphabetArray = Alphabet.index(of: title) {
-            let sectionForIndexTitle = Int(indexOfAlphabetArray)
-            return sectionForIndexTitle
-        }
-        return 0
-    }
-    
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         
-        var contact = CNContact()
-        
-        if (contactViewModel.shouldShowSearchResults) {
-            contact = contactViewModel.contactModel.filteredContacts[indexPath.row]
-        } else {
-            contact = (contactViewModel.contactModel.contacts[Alphabet[indexPath.section]]?[indexPath.row])!
-        }
+        let contact = contactViewModel.contactAtIndex(indexPath: indexPath)
         
         let contactName = "\(contact.givenName) \(contact.familyName)"
-        var phoneNumber = "(\((contact.phoneNumbers[0].value).value(forKey: "digits") as! String)"
-        phoneNumber = phoneNumber.insert(string: ") ", ind: 4)
-        phoneNumber = phoneNumber.insert(string: "-", ind: 9)
+        let phoneNumber = contactViewModel.phoneNumberStringModifier(contact: contact)
         
         let alertController = UIAlertController(title: "Call Contact", message: "Would you like to call \(contactName) at number: \(phoneNumber)?", preferredStyle: .alert)
         
@@ -182,18 +112,51 @@ class ContactBrowserTableViewController: UITableViewController, UISearchBarDeleg
         
     }
     
+    override func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
+        
+        return contactViewModel.titleForHeaderInSection(section: section)
+        
+    }
+    
+    override func numberOfSections(in tableView: UITableView) -> Int {
+        
+        var sections = 0
+        
+        if (contactViewModel.shouldShowSearchResults) {
+            return 1
+        } else {
+            for _ in contactViewModel.contactModel.contacts.keys {
+                sections += 1
+            }
+        }
+        return sections
+        
+    }
+    
+    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        
+        return contactViewModel.numberOfRowsInSection(section: section)
+        
+    }
+    
+    
+    override func sectionIndexTitles(for tableView: UITableView) -> [String]? {
+        return contactViewModel.returnAlphabetArray()
+    }
+    
+    override func tableView(_ tableView: UITableView, sectionForSectionIndexTitle title: String, at index: Int) -> Int {
+        
+        return contactViewModel.sectionForSectionIndexTitle(title: title, index: index)
+        
+    }
+    
 }
 
 
 
 
 
-
-
-
-
-
-    // MARK: - Extensions to Fundamental Classes
+// MARK: - Extensions to Fundamental Classes
 
 extension String {
     func insert(string:String,ind:Int) -> String {

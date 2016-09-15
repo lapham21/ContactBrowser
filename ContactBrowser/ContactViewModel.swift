@@ -69,4 +69,67 @@ class ContactViewModel
         contactModel.filteredContacts.removeAll()
     }
     
+    private let Alphabet = ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"]
+    
+    func titleForHeaderInSection(section: Int) -> String? {
+        
+        if (shouldShowSearchResults) {
+            return nil
+        } else {
+            return Alphabet[section]
+        }
+    }
+    
+    func numberOfRowsInSection(section: Int) -> Int {
+        
+        var rows = 0
+        
+        if (shouldShowSearchResults) {
+            return contactModel.filteredContacts.count
+        } else {
+            if let contact = contactModel.contacts[Alphabet[section]] {
+                rows = contact.count
+            }
+        }
+        return rows
+        
+    }
+    
+    func contactAtIndex(indexPath: IndexPath) -> CNContact {
+        
+        var contact = CNContact()
+        
+        if (shouldShowSearchResults) {
+            contact = contactModel.filteredContacts[indexPath.row]
+        } else {
+            contact = (contactModel.contacts[Alphabet[indexPath.section]]?[indexPath.row])!
+        }
+        
+        return contact
+        
+    }
+    
+    func returnAlphabetArray() -> [String] {
+        return Alphabet
+    }
+    
+    func sectionForSectionIndexTitle(title: String, index: Int) -> Int {
+        
+        if let indexOfAlphabetArray = Alphabet.index(of: title) {
+            let sectionForIndexTitle = Int(indexOfAlphabetArray)
+            return sectionForIndexTitle
+        }
+        return 0
+        
+    }
+    
+    func phoneNumberStringModifier(contact: CNContact) -> String {
+        
+        var phoneNumber = "(\((contact.phoneNumbers[0].value).value(forKey: "digits") as! String)"
+        phoneNumber = phoneNumber.insert(string: ") ", ind: 4)
+        phoneNumber = phoneNumber.insert(string: "-", ind: 9)
+        return phoneNumber
+        
+    }
+    
 }
