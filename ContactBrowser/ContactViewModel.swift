@@ -15,21 +15,21 @@ class ContactViewModel {
     
     private var store = CNContactStore()
     
-    var shouldShowSearchResults = false
+    private var shouldShowSearchResults = false
     
     private var contactModel = ContactModel()
     
     func loadContacts(completion: @escaping () -> ()) {
         
-        DispatchQueue.global(qos: .background).async { [weak self] () -> Void in
+        DispatchQueue.global(qos: .background).async { [weak self] in
             self?.loadContacts()
-            DispatchQueue.main.async { () -> Void in
+            DispatchQueue.main.async {
                 completion()
             }
         }
     }
     
-    func loadContacts() {
+    private func loadContacts() {
         let toFetch = [CNContactGivenNameKey, CNContactFamilyNameKey, CNContactPhoneNumbersKey]
         let request = CNContactFetchRequest(keysToFetch: toFetch as [CNKeyDescriptor])
         
@@ -46,6 +46,7 @@ class ContactViewModel {
                 }
             }
         } catch let err {
+            // TODO: Pass error through to VC to display error
             print(err)
         }
         
@@ -61,9 +62,9 @@ class ContactViewModel {
         if searchText != "" {
             shouldShowSearchResults = true
             resetFilteredContactArray()
-            DispatchQueue.global(qos: .background).async { [weak self] () -> Void in
+            DispatchQueue.global(qos: .background).async { [weak self] in
                 self?.loadFilteredContacts(filterString: searchText)
-                DispatchQueue.main.async { () -> Void in
+                DispatchQueue.main.async {
                     completion()
                 }
             }
@@ -74,16 +75,22 @@ class ContactViewModel {
         
     }
     
-    func loadFilteredContacts(filterString: String) {
+    private func loadFilteredContacts(filterString: String) {
+        
+        //let array = list.map { return $0 }
+        
         
         for (_, contacts) in self.contactModel.contacts {
-            for contact in contacts {
-                if contact.givenName.hasPrefix(filterString) || ((contact.phoneNumbers[0].value).value(forKey: "digits") as! String).hasPrefix(filterString) {
-                    if contact.phoneNumbers.description != "" {         // Prevents adding the contact if there is no phone number
-                        self.filteredContacts.append(contact)
-                    }
+            let list = contacts.filter {
+                if let digits = ($0.phoneNumbers[0].value).value(forKey: "digits") as? String,
+                    $0.givenName.hasPrefix(filterString) || digits.hasPrefix(filterString), $0.phoneNumbers.description != "" {
+                    return true
+                } else {
+                    return false
                 }
             }
+            
+            self.filteredContacts.append(contentsOf: list)
         }
         
         filteredContacts.sort { $0.givenName < $1.givenName }

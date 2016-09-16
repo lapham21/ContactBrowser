@@ -58,9 +58,7 @@ class ContactBrowserTableViewController: UITableViewController, UISearchBarDeleg
         
         let alertController = UIAlertController(title: "Call Contact", message: alertMessage, preferredStyle: .alert)
         
-        let cancelAction = UIAlertAction(title: "Cancel", style: .cancel) { (action) in
-            
-        }
+        let cancelAction = UIAlertAction(title: "Cancel", style: .cancel)
         alertController.addAction(cancelAction)
         
         let OKAction = UIAlertAction(title: "Yes", style: .default) { (action) in
@@ -73,9 +71,7 @@ class ContactBrowserTableViewController: UITableViewController, UISearchBarDeleg
         }
         alertController.addAction(OKAction)
         
-        self.present(alertController, animated: true) {
-            // ...
-        }
+        self.present(alertController, animated: true)
         
     }
     
