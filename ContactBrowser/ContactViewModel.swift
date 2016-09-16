@@ -19,17 +19,17 @@ class ContactViewModel {
     
     private var contactModel = ContactModel()
     
-    func loadContacts(completion: @escaping () -> ()) {
+    func loadContacts(completion: @escaping (Error?) -> ()) {
         
         DispatchQueue.global(qos: .background).async { [weak self] in
-            self?.loadContacts()
+            let error = self?.loadContacts()
             DispatchQueue.main.async {
-                completion()
+                completion(error)
             }
         }
     }
     
-    private func loadContacts() {
+    private func loadContacts() -> Error? {
         let toFetch = [CNContactGivenNameKey, CNContactFamilyNameKey, CNContactPhoneNumbersKey]
         let request = CNContactFetchRequest(keysToFetch: toFetch as [CNKeyDescriptor])
         
@@ -46,8 +46,7 @@ class ContactViewModel {
                 }
             }
         } catch let err {
-            // TODO: Pass error through to VC to display error
-            print(err)
+            return err
         }
         
         for key in contactModel.contacts.keys {
@@ -55,6 +54,8 @@ class ContactViewModel {
                 $0.givenName < $1.givenName
             }
         }
+        return nil
+        
     }
     
     func loadFilteredContacts(searchText: String, completion: @escaping () -> ()) {

@@ -26,8 +26,12 @@ class ContactBrowserTableViewController: UITableViewController, UISearchBarDeleg
         
         searchBar.delegate = self
         
-        contactViewModel.loadContacts {
-            self.tableView.reloadData()
+        contactViewModel.loadContacts { err in
+            if let err = err {
+                print(err)
+            } else {
+                self.tableView.reloadData()
+            }
         }
     }
  
