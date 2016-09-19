@@ -9,8 +9,8 @@
 import Foundation
 import Contacts
 
-class ContactModel
+internal struct ContactModel
 {    
-    var contacts = [String: [CNContact]]()
+    var contacts = [String : [CNContact]]()
     
 }

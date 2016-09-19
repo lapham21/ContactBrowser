@@ -9,7 +9,7 @@
 import UIKit
 import Contacts
 
-class ContactBrowserTableViewController: UITableViewController, UISearchBarDelegate, UISearchDisplayDelegate {
+final class ContactBrowserTableViewController: UITableViewController, UISearchBarDelegate, UISearchDisplayDelegate {
     
     // MARK: - Outlets, View Model and Variables
     

@@ -28,16 +28,70 @@ class ContactBrowserTests: XCTestCase {
     
     // MARK: - ContactViewModel Tests
     
-    func testSearchBoolIsFalse() {
-        let contactViewModel = ContactViewModel()
-        XCTAssertTrue(!contactViewModel.shouldShowSearchResults)
-    }
-    
     func testLoadContactsFunctionLoadsTheContactsArray() {
         let contactViewModel = ContactViewModel()
-        contactViewModel.loadContacts()
-        XCTAssertTrue(contactViewModel.contactModel.contacts.count == 24)
+        contactViewModel.loadContacts { err in
+            if let _ = err {
+                XCTAssert(false)
+            } else {
+                XCTAssertTrue(contactViewModel.numberOfSections() == 24)
+            }
+        }
     }
+    
+    func testLoadFilteredContactsAndResetFilteredContacts() {
+        let contactVM = ContactViewModel()
+        
+        contactVM.loadContacts { _ in }
+        
+        contactVM.loadFilteredContacts(searchText: "A") {
+            XCTAssert(true)
+        }
+
+        contactVM.resetFilteredContactArray()
+        
+        XCTAssertTrue(contactVM.numberOfRowsInSection(section: 0) == 0, "Filter cleared successfully")
+    }
+    
+    func testTitleForHeaderInSection() {
+        
+        let contactVM = ContactViewModel()
+        
+        contactVM.loadContacts { _ in }
+        
+        if let stringD = contactVM.titleForHeaderInSection(section: 3) {
+            XCTAssertTrue(stringD == "D", "Wrong string for section")
+        } else {
+            XCTFail("No title D")
+        }
+
+    }
+    
+    func testNumberOfSectionsFunction() {
+        
+        let contactVM = ContactViewModel()
+        let contactVC = ContactBrowserTableViewController()
+        
+        contactVM.loadContacts {
+            contactVC.tableView.reloadData()
+        }
+        
+        var sections = contactVM.numberOfSections()
+        print(sections)
+        
+        XCTAssertTrue(sections == 24, "sections calculation is wrong")
+        
+        contactVM.loadFilteredContacts(searchText: "A") {
+            XCTAssert(true)
+        }
+        
+        sections = contactVM.numberOfSections()
+        
+        XCTAssertTrue(sections == 1, "sections calculation is wrong")
+        
+    }
+    
+    
     
     
     

@@ -9,7 +9,9 @@
 import Foundation
 import Contacts
 
-class ContactViewModel {
+final internal class ContactViewModel {
+    
+    // MARK: - Model and Variables
     
     private var filteredContacts = [CNContact]()
     
@@ -17,7 +19,9 @@ class ContactViewModel {
     
     private var shouldShowSearchResults = false
     
-    private var contactModel = ContactModel()
+    var contactModel = ContactModel()
+    
+    // MARK: - Load Contacts Dictionary and Load Filtered Contacts Array
     
     func loadContacts(completion: @escaping (Error?) -> ()) {
         
@@ -101,6 +105,8 @@ class ContactViewModel {
         filteredContacts.removeAll()
     }
     
+    // MARK: - TableView Creation Utility Functions
+    
     private let Alphabet = ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"]
     
     func titleForHeaderInSection(section: Int) -> String? {
@@ -156,6 +162,18 @@ class ContactViewModel {
         
     }
     
+    func sectionForSectionIndexTitle(title: String, index: Int) -> Int {
+        
+        if let indexOfAlphabetArray = Alphabet.index(of: title) {
+            let sectionForIndexTitle = Int(indexOfAlphabetArray)
+            return sectionForIndexTitle
+        }
+        return 0
+        
+    }
+    
+    // MARK: - TableView Message Utility Functions
+    
     func alertControllerMessageForContactAtIndexPath(indexPath: IndexPath) -> String {
         
         let contact = contactAtIndexPath(indexPath: indexPath)
@@ -182,16 +200,6 @@ class ContactViewModel {
     
     func returnAlphabetArray() -> [String] {
         return Alphabet
-    }
-    
-    func sectionForSectionIndexTitle(title: String, index: Int) -> Int {
-        
-        if let indexOfAlphabetArray = Alphabet.index(of: title) {
-            let sectionForIndexTitle = Int(indexOfAlphabetArray)
-            return sectionForIndexTitle
-        }
-        return 0
-        
     }
     
     func phoneNumberFancyStringForContactAtIndexPath(indexPath: IndexPath) -> String {
